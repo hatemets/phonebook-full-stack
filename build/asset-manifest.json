@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/static/js/main.dab240ea.js",
+    "index.html": "/index.html",
+    "main.dab240ea.js.map": "/static/js/main.dab240ea.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.dab240ea.js"
+  ]
+}
