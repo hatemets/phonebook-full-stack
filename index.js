@@ -2,6 +2,9 @@ const express = require("express")
 const cors = require("cors")
 const morgan = require("morgan")
 const path = require("path")
+require("dotenv").config()
+const Person = require("./models/person")
+
 
 const app = express()
 const port = process.env.PORT || 3001
@@ -41,7 +44,9 @@ app.use(express.static("build"))
 
 // GET
 app.get("/api/persons", (req, res) => {
-    res.json(people)
+    Person.find({}).then(people => {
+        res.json(people)
+    })
 })
 
 app.get("/info", (req, res) => {
@@ -53,13 +58,24 @@ app.get("/info", (req, res) => {
 
 app.get("/api/persons/:id", (req, res) => {
     const person = people.find(p => p.id === Number(req.params.id))
-    res.status(404).send(person ? person : `User with id ${req.params.id} not found`)
+
+    Person
+        .findById(req.params.id)
+        .then(foundPerson => {
+            res.json(foundPerson)
+        })
+        .catch(err => res.status(404).send(person ? person : `User with id ${req.params.id} not found`))
 })
 
 
 // DELETE
 app.delete("/api/persons/:id", (req, res) => {
     const person = people.find(person => person.id === Number(req.params.id))
+
+    // Person.findByIdAndDelete(req.params.id).then(res => {
+    //     console.log(res)
+    //     res.send("deleted")
+    // })
 
     if (person) {
         // Remove the person from the array
