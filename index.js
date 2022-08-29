@@ -85,6 +85,23 @@ app.post("/api/persons", (req, res, next) => {
 })
 
 
+// PUT
+app.put("/api/persons/:id", (req, res, next) => {
+    const { name, number } = req.body
+
+    if (!name || !number) {
+        next({ name: "MissingInput" })
+    }
+    else {
+        const updatedPerson = { name, number }
+        Person
+            .findByIdAndUpdate(req.params.id, updatedPerson, { new: true })
+            .then(updatedPerson => res.json(updatedPerson))
+            .catch(err => next(err))
+    }
+})
+
+
 const unknownEndpoint = (req, res) => {
     res.status(404).send({ error: "Unknown endpoint" })
 }
@@ -96,6 +113,9 @@ const errorHandler = (err, req, res, next) => {
     switch (err.name) {
         case "CastError": {
             res.status(400).send({ error: "Invalid MongoDB ID" })
+        }
+        case "MissingInput": {
+            res.status(404).send({ error: "Input missing" })
         }
     }
 
