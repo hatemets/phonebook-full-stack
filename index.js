@@ -9,29 +9,6 @@ const Person = require("./models/person")
 const app = express()
 const port = process.env.PORT || 3001
 
-const people = [
-    { 
-        "id": 1,
-        "name": "Arto Hellas", 
-        "number": "040-123456"
-    },
-    { 
-        "id": 2,
-        "name": "Ada Lovelace", 
-        "number": "39-44-5323523"
-    },
-    { 
-        "id": 3,
-        "name": "Dan Abramov", 
-        "number": "12-43-234345"
-    },
-    { 
-        "id": 4,
-        "name": "Mary Poppendieck", 
-        "number": "39-23-6423122"
-    }
-]
-
 // Middleware
 app.use(cors())
 app.use(express.json())
@@ -70,25 +47,13 @@ app.get("/api/persons/:id", (req, res) => {
 
 // DELETE
 app.delete("/api/persons/:id", (req, res) => {
-    const person = people.find(person => person.id === Number(req.params.id))
-
-    // Person.findByIdAndDelete(req.params.id).then(res => {
-    //     console.log(res)
-    //     res.send("deleted")
-    // })
-
-    if (person) {
-        // Remove the person from the array
-        people.splice(people.indexOf(person), 1)
-        res.send(`Person with id ${req.params.id} deleted successfully!`)
-    }
-    else {
-        res.status(404)
-        res.send(`There does not exist a person with id ${req.params.id}`)
-    }
+    Person.findByIdAndDelete(req.params.id)
+        .then(result => {
+            console.log(result)
+            res.end()
+        })
+        .catch(err => console.error(err))
 })
-
-
 
 
 // POST

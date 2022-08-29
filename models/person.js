@@ -7,7 +7,7 @@ console.log("Connecting to", url)
 mongoose
     .connect(url)
     .then(result => console.log("Connection established"))
-    .catch((err) => console.log(err))
+    .catch(err => console.error(err))
 
 
 const personSchema = new mongoose.Schema({
