@@ -20,7 +20,7 @@ app.use(express.static("build"))
 
 
 // GET
-app.get("/api/persons", (req, res) => {
+app.get("/api/persons", (req, res, next) => {
     Person.find({})
         .then(people => {
             res.json(people)
@@ -28,27 +28,26 @@ app.get("/api/persons", (req, res) => {
         .catch(err => next(err))
 })
 
-app.get("/info", (req, res) => {
-    let content = `<p>Phonebook has info about ${people.length} people<p>`
-    content += `<p>${Date()}</p>`
-
-    res.send(content)
+app.get("/info", (req, res, next) => {
+    let content = ""
+    Person
+        .find({})
+        .then(people => content += `<p>Phonebook has info about ${people.length} people<p>`)
+        .then(() => content += `<p>${Date()}</p>`)
+        .then(() => res.send(content))
+        .catch(err => next(err))
 })
 
-app.get("/api/persons/:id", (req, res) => {
-    const person = people.find(p => p.id === Number(req.params.id))
-
+app.get("/api/persons/:id", (req, res, next) => {
     Person
         .findById(req.params.id)
-        .then(foundPerson => {
-            res.json(foundPerson)
-        })
+        .then(foundPerson => res.json(foundPerson))
         .catch(err => next(err))
 })
 
 
 // DELETE
-app.delete("/api/persons/:id", (req, res) => {
+app.delete("/api/persons/:id", (req, res, next) => {
     Person.findByIdAndDelete(req.params.id)
         .then(result => {
             console.log(result)
@@ -59,7 +58,7 @@ app.delete("/api/persons/:id", (req, res) => {
 
 
 // POST
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
     const { name, number } = req.body
 
     if (!name || !number) {
@@ -92,10 +91,13 @@ const unknownEndpoint = (req, res) => {
 
 const errorHandler = (err, req, res, next) => {
     console.error(err.message)
-    console.log(err.name)
 
-
-    // .catch(err => res.status(500).send({ error: err }))
+    // Error types
+    switch (err.name) {
+        case "CastError": {
+            res.status(400).send({ error: "Invalid MongoDB ID" })
+        }
+    }
 
     next(err)
 }
