@@ -10,14 +10,19 @@ const app = express()
 const port = process.env.PORT || 3001
 
 // Middleware
-app.use(cors())
+app.use(express.static("build"))
 app.use(express.json())
 
-morgan.token("body", (req, res) => JSON.stringify(req.body))
-app.use(morgan(":method :url :status :body"))
+const requestLogger = morgan((tokens, req, res) => [
+    tokens.method(req, res),
+    tokens.url(req, res),
+    tokens.status(req, res),
+    tokens["response-time"](req, res), "ms",
+    JSON.stringify(req.body)
+].join(" "))
 
-app.use(express.static("build"))
-
+app.use(requestLogger)
+app.use(cors())
 
 // GET
 app.get("/api/persons", (req, res, next) => {
@@ -70,8 +75,6 @@ app.post("/api/persons", (req, res, next) => {
                 if (people.map(person => person.name.toLowerCase()).includes(name.toLowerCase())) {
                     res.status(400).send({ error: "A person with this name already exists" })
                 }
-
-
             })
             .then(() => {
                 const newPerson = new Person({ name, number })
@@ -122,9 +125,7 @@ const errorHandler = (err, req, res, next) => {
     next(err)
 }
 
-// In case no previous handler handles the request
 app.use(unknownEndpoint)
-
 app.use(errorHandler)
 
 app.listen(port, () => {
