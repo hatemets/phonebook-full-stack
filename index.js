@@ -9,6 +9,25 @@ const Person = require("./models/person")
 const app = express()
 const port = process.env.PORT || 3001
 
+const errorHandler = (err, req, res, next) => {
+    console.error(err.message)
+
+    // Error types
+    switch (err.name) {
+        case "CastError": {
+            res.status(400).send({ error: "Invalid MongoDB ID" })
+        }
+        case "MissingInput": {
+            res.status(404).send({ error: "Input missing" })
+        }
+        case "ValidationError": {
+            res.status(400).json({ error: err.message })
+        }
+    }
+
+    next(err)
+}
+
 // Middleware
 app.use(express.static("build"))
 app.use(express.json())
@@ -55,8 +74,8 @@ app.get("/api/persons/:id", (req, res, next) => {
 app.delete("/api/persons/:id", (req, res, next) => {
     Person.findByIdAndDelete(req.params.id)
         .then(result => {
-            console.log(result)
-            res.end()
+            const status = (result) ? 204 : 404
+            res.status(status).end()
         })
         .catch(err => next(err))
 })
@@ -65,64 +84,27 @@ app.delete("/api/persons/:id", (req, res, next) => {
 // POST
 app.post("/api/persons", (req, res, next) => {
     const { name, number } = req.body
+    const person = new Person({ name, number })
 
-    if (!name || !number) {
-        res.status(404).send({ error: "Name and/or number missing" })
-    }
-    else {
-        Person.find({})
-            .then(people => {
-                if (people.map(person => person.name.toLowerCase()).includes(name.toLowerCase())) {
-                    res.status(400).send({ error: "A person with this name already exists" })
-                }
-            })
-            .then(() => {
-                const newPerson = new Person({ name, number })
-                newPerson
-                    .save()
-                    .then(result => res.status(201).send(result))
-                    .catch(err => next(err))
-            })
-            .catch(err => next(err))
-    }
+    person.save()
+        .then(p => res.json(p))
+        .catch(err => next(err))
 })
-
 
 // PUT
 app.put("/api/persons/:id", (req, res, next) => {
     const { name, number } = req.body
 
-    if (!name || !number) {
-        next({ name: "MissingInput" })
-    }
-    else {
-        const updatedPerson = { name, number }
-        Person
-            .findByIdAndUpdate(req.params.id, updatedPerson, { new: true })
-            .then(updatedPerson => res.json(updatedPerson))
-            .catch(err => next(err))
-    }
-})
+    const updatedPerson = { name, number }
 
+    Person
+        .findByIdAndUpdate(req.params.id, updatedPerson, { new: true, runValidators })
+        .then(updatedPerson => res.json(updatedPerson))
+        .catch(err => next(err))
+})
 
 const unknownEndpoint = (req, res) => {
     res.status(404).send({ error: "Unknown endpoint" })
-}
-
-const errorHandler = (err, req, res, next) => {
-    console.error(err.message)
-
-    // Error types
-    switch (err.name) {
-        case "CastError": {
-            res.status(400).send({ error: "Invalid MongoDB ID" })
-        }
-        case "MissingInput": {
-            res.status(404).send({ error: "Input missing" })
-        }
-    }
-
-    next(err)
 }
 
 app.use(unknownEndpoint)
